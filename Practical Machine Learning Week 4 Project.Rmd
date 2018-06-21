@@ -1,0 +1,113 @@
+---
+title: "Practical Machine Learning Week 4 Project"
+author: "ajibolafaki"
+date: "June 19, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE, warnings=FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+
+## Load & Cleanse Data
+
+```{r, results='hide', warnings=FALSE, message = FALSE}
+
+library(caret)
+library(tidyverse)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(RGtk2)
+library(rattle)
+
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+training_df <- read.csv(url(trainUrl), na.strings=c("NA","#DIV/0!",""))
+testing_df  <- read.csv(url(testUrl), na.strings=c("NA","#DIV/0!",""))
+
+# Exclude first seven variables because they are not predictors
+#str(training_df)
+training_df <- training_df[, -c(1:7)]
+
+# Exclude columns with NAs from training dataset
+training_df <- training_df[, colSums(is.na(training_df)) == 0]
+
+# Check for near zero variance in training dataset
+training_nzv <- nzv(training_df[,-ncol(training_df)],saveMetrics=TRUE)
+#rownames(training_nzv)
+
+
+# partition training dataset further into train and test data sets
+inTrain  <- createDataPartition(training_df$classe, p=0.75, list=FALSE)
+train_df <- training_df[inTrain, ]
+test_df  <- training_df[-inTrain, ]
+
+dim(train_df)
+dim(test_df)
+
+```
+
+## Modeling : Decision Trees
+
+```{r}
+set.seed(21251)
+fit_dt <- rpart(classe ~ ., data = train_df, method="class")
+fancyRpartPlot(fit_dt)
+predict_dt <- predict(fit_dt, test_df, type = "class")
+confusionMatrix(predict_dt, test_df$classe)
+
+```
+
+The estimated accuracy of the decision tree is 71.8%.
+
+
+## Modeling : Random Forest
+In this section, we build a random forest model on the test set. We expect a small out of sample error estimate
+
+```{r}
+set.seed(21212)
+fit_rf <- randomForest(classe ~ ., data = train_df, ntree = 1000)
+predict_rf <- predict(fit_rf, test_df, type = "class")
+confusionMatrix(predict_rf, test_df$classe)
+
+```
+
+The estimated accuracy of the random forest model is 99.55%.
+
+## Modeling : GBM
+In this section, we build a GBM model on the test set.
+
+```{r results='hide', warnings=FALSE, message = FALSE}
+
+set.seed(21237)
+fit_gbm <- train(classe ~ ., data = train_df, 
+                             trControl = trainControl(method = "repeatedcv", number = 5, repeats = 1),
+                             method = "gbm")
+
+```
+
+```{r}
+
+predict_gbm <- predict(fit_gbm, test_df)
+confusionMatrix(predict_gbm, test_df$classe)
+
+```
+
+The estimated accuracy of the GBM model is 96.45%. Since the random forest model performed
+better than GBM and Decision Trees, we run predicions on the test set using the random forest model.
+
+```{r}
+
+predict_rf_final <- predict(fit_rf, testing_df, type = "class")
+predict_rf_final
+
+```
+
+
