@@ -2,7 +2,9 @@
 title: "Practical Machine Learning Week 4 Project"
 author: "ajibolafaki"
 date: "June 19, 2018"
-output: html_document
+output: 
+  md_document:
+          variant: markdown_github
 ---
 
 ```{r setup, include=FALSE, warnings=FALSE, message = FALSE}
@@ -65,7 +67,7 @@ confusionMatrix(predict_dt, test_df$classe)
 
 ```
 
-The estimated accuracy of the decision tree is 71.8%.
+
 
 
 ## Modeling : Random Forest
@@ -79,7 +81,7 @@ confusionMatrix(predict_rf, test_df$classe)
 
 ```
 
-The estimated accuracy of the random forest model is 99.55%.
+
 
 ## Modeling : GBM
 In this section, we build a GBM model on the test set.
@@ -100,8 +102,8 @@ confusionMatrix(predict_gbm, test_df$classe)
 
 ```
 
-The estimated accuracy of the GBM model is 96.45%. Since the random forest model performed
-better than GBM and Decision Trees, we run predicions on the test set using the random forest model.
+Since the random forest model performed better than GBM and Decision Trees, we run predicions on the 
+test set using the random forest model.
 
 ```{r}
 
